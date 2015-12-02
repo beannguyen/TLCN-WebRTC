@@ -1,0 +1,135 @@
+<div class="login-container">
+
+    <div class="row">
+
+        <div class="col-sm-6">
+
+            <script type="text/javascript">
+                jQuery(document).ready(function($)
+                {
+                    // Reveal Login form
+                    setTimeout(function(){ $(".fade-in-effect").addClass('in'); }, 1);
+
+
+                    // Validation and Ajax action
+                    $("form#login").validate({
+                        rules: {
+                            username: {
+                                required: true
+                            },
+
+                            email: {
+                                required: true,
+                                email: true
+                            },
+
+                            fullname: {
+                                required: true
+                            }
+                        },
+
+                        // Form Processing via AJAX
+                        submitHandler: function(e, form)
+                        {
+                            e.preventDefault();
+
+                        }
+                    });
+
+                    // Set Form focus
+                    $("form#register .form-group:has(.form-control):first .form-control").focus();
+                });
+            </script>
+
+            <!-- Errors container -->
+            <div class="errors-container">
+
+
+            </div>
+
+            <!-- Add class "fade-in-effect" for login form effect -->
+            <form method="post" role="form" id="register" class="login-form fade-in-effect">
+
+                <div class="login-header">
+                    <a href="#/app/dashboard-variant-1" class="logo">
+                        <img src="assets/images/logo@2x.png" alt="" width="80" />
+                        <span>register</span>
+                    </a>
+
+                    <p>Dear user, create account to access our classroom!</p>
+                </div>
+
+                <div class="alert alert-danger hidden">
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">×</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <strong>Oops!</strong> Something went wrong went we try to create new account!
+                </div>
+
+                <div class="alert alert-success hidden">
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">×</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+
+                    <strong>Well done!</strong> You successfully create new account.
+                </div>
+
+                <div class="alert alert-warning hidden">
+                    <strong>Warning!</strong> {{ uiMsg.warning }}
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label" for="username">Username</label>
+                    <input type="text" class="form-control input-dark" name="username" id="username" autocomplete="off" ng-model="credential.username" />
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label" for="username">Email</label>
+                    <input type="email" class="form-control input-dark" name="email" id="email" autocomplete="off" ng-model="credential.email" />
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label" for="username">Fullname</label>
+                    <input type="text" class="form-control input-dark" name="email" id="fullname" autocomplete="off" ng-model="credential.fullname" />
+                </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-dark  btn-block text-left" ng-click="register()">
+                        <i class="fa-lock"></i>
+                        Resgiter
+                    </button>
+                </div>
+
+                <div class="login-footer">
+                    <a href="/#/access/login"><i class="fa fa-arrow-left"></i> Already have an account, back to Login.</a>
+                </div>
+
+            </form>
+
+            <!-- External login -->
+            <div class="external-login">
+                <!--<a href="" class="facebook">
+                    <i class="fa-facebook"></i>
+                    Facebook Login
+                </a>-->
+
+                <!--
+                <a href="<?php _hash(); ?>" class="twitter">
+                    <i class="fa-twitter"></i>
+                    Login with Twitter
+                </a>
+
+                <a href="<?php _hash(); ?>" class="gplus">
+                    <i class="fa-google-plus"></i>
+                    Login with Google Plus
+                </a>
+                 -->
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
