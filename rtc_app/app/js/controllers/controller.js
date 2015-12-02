@@ -302,15 +302,24 @@ var controller = angular.module('xenon.controllers', [])
     })
     // Added in v1.3
     .controller('FooterChatCtrl', function ($log, $scope, $rootScope, $element) {
+
+        // socket io client
+        var socket = io();
         $scope.chatText = '';
         $scope.isConversationVisible = false;
         $scope.allMessages = [];
 
-        $scope.toggleChatConversation = function () {
-            $scope.isConversationVisible = !$scope.isConversationVisible;
+        /* Init tooltip */
+        var createTooltip = function () {
+            console.log('created');
+            $element.find('#userInfoTooltip').tooltip({
+                viewport: { selector: '.conversation-messages', padding: 0 }
+            });
+        };
 
-            if ($scope.isConversationVisible) {
-                setTimeout(function () {
+        var scrollBottom = function () {
+            setTimeout(function () {
+                $scope.$apply(function () {
                     var $el = $element.find('.ps-scrollbar');
 
                     if ($el.hasClass('ps-scroll-down')) {
@@ -320,6 +329,16 @@ var controller = angular.module('xenon.controllers', [])
                     $el.perfectScrollbar({
                         wheelPropagation: false
                     });
+                }, 0);
+            });
+        };
+
+        $scope.toggleChatConversation = function () {
+            $scope.isConversationVisible = !$scope.isConversationVisible;
+
+            if ($scope.isConversationVisible) {
+                setTimeout(function () {
+                    scrollBottom();
 
                     $element.find('.form-control').focus();
 
@@ -328,36 +347,65 @@ var controller = angular.module('xenon.controllers', [])
         };
 
         $rootScope.addToConversation = function (who, msgType, content) {
-            $log.debug('I am listening', who, msgType, content);
+            //$log.debug('I am listening', who, msgType, content);
             setTimeout(function () {
                 $scope.$apply(function () {
-                    if (angular.isObject(content)) {
-                        who = content.from;
-                        content = content.msg;
-                    }
 
                     $scope.allMessages.push({
                         text: content,
                         author: who,
                         time: moment()
                     });
-                    console.log($scope.allMessages);
+                    //console.log($scope.allMessages);
+
+                    // scroll to bottom
+                    scrollBottom();
+
+                    // create tooltip
+                    createTooltip();
                 }, 0);
             });
         };
 
         $scope.sendPublishMessage = function () {
-            easyrtc.sendPeerMessage({targetRoom: 'SectorOne'}, "message", {
-                msg: $scope.chatText,
-                from: $rootScope.currentUser
-            }, function (msgType, msgData) {
-                console.log('sent your message', msgData);
-            }, function (errorCode, errorText) {
-                console.log('cannot send message: ', errorText);
+
+            socket.emit('send message', {
+                sender: $rootScope.currentUser,
+                content: $scope.chatText,
+                room: 'publish chat'
             });
-            $rootScope.addToConversation($rootScope.currentUser, "message", $scope.chatText);
+
             $scope.chatText = '';
         };
+
+        // invoked after the message saved on db
+        socket.on('sent message', function(data) {
+            console.log('received new message from "' + data.sender.username + '" with content "' + data.content + '"');
+            $rootScope.addToConversation(data.sender, "message", data.content);
+        });
+
+        // invoked when new user connected and get recent messages successful
+        socket.on('loaded recent messages', function (data) {
+            console.log('loaded recent messages', data);
+            setTimeout(function () {
+
+                $scope.$apply(function () {
+                    $scope.allMessages = data;
+                    angular.forEach(data, function (value) {
+                        $scope.allMessages.push({
+                            text: value.content,
+                            author: value.author,
+                            time: value.createdAt
+                        })
+                    })
+                }, 0);
+            })
+        });
+
+        // invoked when fail to get recent messages
+        socket.on('cannot load recent messages', function (data) {
+
+        });
 
         // determine if this is my message
         $scope.isMyMessage = function (msg) {
@@ -365,5 +413,20 @@ var controller = angular.module('xenon.controllers', [])
                 return true;
             }
             return false;
-        }
+        };
+
+        // determine if the previous message is sample owner
+        $scope.isNestedMessage = function (i) {
+
+            if (i == 0) {
+                return false;
+            }
+            var curMsg = $scope.allMessages[i],
+                prevMsg = $scope.allMessages[i - 1];
+
+            if ( curMsg.author.username == prevMsg.author.username) {
+                return true;
+            }
+            return false;
+        };
     });

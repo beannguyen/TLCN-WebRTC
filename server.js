@@ -47,9 +47,13 @@ mongoose.connect('mongodb://127.0.0.1/elearning');
 
 // Models
 var User = mongoose.model('User', {username: String, easyRtcId: {type: String, default: ''}, email: String, fullname: String, isConnected: { type: Boolean, default: false }});
+var Message = mongoose.model('Message', {author: String, content: String, createdAt: { type: Date, default: Date.now }, room: String});
 
 socketServer.on('connection', function (socket) {
     console.log('new user connected');
+
+    // init variables
+    socket.room = 'publish chat';
 
     socket.on('disconnect', function(){
         console.log('user disconnected');
@@ -99,6 +103,9 @@ socketServer.on('connection', function (socket) {
         });
     });
 
+    /**
+     * Check credential and process login
+     */
     socket.on('user login', function (credential) {
         User.findOne({username: credential.username}, function (err, obj) {
             if (err) {
@@ -112,6 +119,9 @@ socketServer.on('connection', function (socket) {
         })
     });
 
+    /**
+     * invoked when user initialed rtc options
+     */
     socket.on('user logged in rtc', function (_user) {
         User.findOne({username: _user.username}, function (err, user) {
             if (err) {
@@ -121,6 +131,7 @@ socketServer.on('connection', function (socket) {
                 user.isConnected = true;
                 user.save();
                 socket.user = user;
+                socket.join(socket.room);
 
                 // find all users
                 User.find({}, function (err, users) {
@@ -131,8 +142,38 @@ socketServer.on('connection', function (socket) {
                         // alert updated
                         socket.emit('updated easyRtcId', {msg: 'success', data: users});
                     }
-                })
+                });
+
+                Message.find({room: socket.room})
+                    .limit(50)
+                    .sort({createdAt: -1})
+                    .exec(function (err, messages) {
+                        if (err) {
+                            console.log('fail to get recent messages');
+                            socketServer.sockets.in(socket.room).emit('cannot load recent messages');
+                        } else if (messages) {
+                            console.log('loaded recent messages');
+                            socketServer.sockets.in(socket.room).emit('loaded recent messages', messages);
+                        }
+                    });
             }
         });
+    });
+
+    socket.on('send message', function (data) {
+        // save this message to db
+        var message = new Message({
+            author: data.sender._id,
+            content: data.content,
+            room: data.room
+        });
+
+        message.save(function (err, obj) {
+            if (err) {
+                console.log('Cannot save the message!');
+            } else if (obj) {
+                socketServer.sockets.in(data.room).emit('sent message', data);
+            }
+        })
     })
 });

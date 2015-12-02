@@ -62,7 +62,7 @@
 
 					<li ng-repeat="msg in allMessages" ng-class="{me: isMyMessage(msg)}">
 						<div ng-if="!isMyMessage(msg)">
-							<div class="user-info">
+							<div class="user-info" ng-if="!isNestedMessage($index)">
 								<a href="" class="tooltip-primary" tooltip="Tooltip on top" tooltip-placement="left">
 									<img src="assets/images/user-1.png" width="30" height="30" alt="user-image" />
 								</a>
@@ -71,12 +71,12 @@
 								<p>{{msg.text}}</p>
 							</div>
 						</div>
-						<div class="mine">
+						<div class="mine" ng-if="isMyMessage(msg)">
 							<div class="message-entry">
 								<p>{{msg.text}}</p>
 							</div>
-							<div class="user-info">
-								<a href="" class="tooltip-primary" data-toggle="tooltip" tooltip="Tooltip on top" tooltip-placement="right">
+							<div class="user-info" ng-if="!isNestedMessage($index)">
+								<a href="" id="userInfoTooltip" class="tooltip-primary" data-toggle="tooltip" tooltip="Tooltip on top" tooltip-placement="right">
 								<!--<a href="" class="popover-blue" popover-trigger="mouseenter" popover-placement="right" popover-title="Twitter Bootstrap Popover" popover="It's so simple to create a tooltop for my website!">-->
 									<img src="assets/images/user-4.png" width="30" height="30" alt="user-image" />
 								</a>

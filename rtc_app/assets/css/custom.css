@@ -20,3 +20,11 @@ a {
 .conversation-window {
     min-height: 300px;
 }
+
+.footer-sticked-chat .chat-conversations>li .conversation-window .conversation-messages {
+    margin-bottom: 30px !important;
+}
+
+.user-info .tooltip {
+
+}
