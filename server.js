@@ -27,7 +27,7 @@ var rtc = easyrtc.listen(httpApp, socketServer,{logLevel:"debug", logDateEnable:
 
     // Creates a new application called MyApp with a default room named "SectorOne".
     rtc.createApp(
-        "easyrtc.multipleChanel",
+        "multipleChanel",
         {"roomDefaultName":"SectorOne"},
         myEasyrtcApp
     );
@@ -143,19 +143,6 @@ socketServer.on('connection', function (socket) {
                         socket.emit('updated easyRtcId', {msg: 'success', data: users});
                     }
                 });
-
-                Message.find({room: socket.room})
-                    .limit(50)
-                    .sort({createdAt: -1})
-                    .exec(function (err, messages) {
-                        if (err) {
-                            console.log('fail to get recent messages');
-                            socketServer.sockets.in(socket.room).emit('cannot load recent messages');
-                        } else if (messages) {
-                            console.log('loaded recent messages');
-                            socketServer.sockets.in(socket.room).emit('loaded recent messages', messages);
-                        }
-                    });
             }
         });
     });

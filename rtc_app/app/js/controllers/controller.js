@@ -136,33 +136,47 @@ var controller = angular.module('xenon.controllers', [])
         // Authentication
         $rootScope.currentUser = $localStorage.currentUser;
 
+
+        // socket client
+        var socket = io();
+
         // logout
         $scope.logout = function () {
             $rootScope.currentUser = null;
-            $state.go('access.login');
+            delete $localStorage.currentUser;
+            // disconnect from easyRtc Server
+            easyrtc.disconnect();
+
+            $state.go('access.login', { status: 'logged out' });
         };
     })
 
-    .controller('WebRtcCtrl', function ($log, $scope, $rootScope, $localStorage) {
+    .controller('WebRtcCtrl', function ($log, $scope, $rootScope, $state, $localStorage) {
+
+    })
+
+    .controller('LoginCtrl', function ($scope, $rootScope, $state, $stateParams, $localStorage, $location) {
+        $rootScope.isLoginPage = true;
+        $rootScope.isMainPage = false;
+        $scope.credential = {};
+        $scope.uiMsg = {};
+        // socket client
+        var socket = io();
+
         /**
          * Start init WebRTC
          */
-        var socket = io();
 
         var _init = function () {
+
             $scope.users = [];
+            $scope.easyRtcId = null;
 
             _setEasyRtcDefaultOptions();
 
-            easyrtc.setPeerListener($rootScope.addToConversation);
+            easyrtc.setPeerListener(_peerListener());
             easyrtc.setRoomOccupantListener(_roomOccupantListener);
-            easyrtc.connect("easyrtc.multipleChanel", _loginSuccess, _loginFailure);
-            easyrtc.joinRoom("SectorOne", null,
-                function (roomName) {
-                    console.log("join to " + roomName + " successfully!");
-                }, function (errorCode, errorText, roomName) {
-                    console.log('Cannot join ' + roomName + ', because #', + errorCode + ': ' + errorText);
-                })
+            easyrtc.connect("multipleChanel", _loginSuccess, _loginFailure);
         };
 
         var _setEasyRtcDefaultOptions = function () {
@@ -174,19 +188,18 @@ var controller = angular.module('xenon.controllers', [])
             easyrtc.enableAudioReceive(true);
         };
 
+        var _peerListener = function() {
+            console.log('peer listener');
+        };
+
         var _roomOccupantListener = function (roomName, occupants, isPrimary) {
 
             // do something to add user to list
         };
 
         var _loginSuccess = function (_easyRtcId) {
-            console.log('current user', $rootScope.currentUser);
-            $rootScope.currentUser.easyRtcId = _easyRtcId;
-            $rootScope.currentUser.isConnected = true;
-            // update local storage
-            $localStorage.currentUser = $rootScope.currentUser;
 
-            socket.emit('user logged in rtc', $rootScope.currentUser);
+            $scope.easyRtcId = _easyRtcId;
         };
 
         // when easyRtcId updated on db, load all user
@@ -195,19 +208,24 @@ var controller = angular.module('xenon.controllers', [])
         });
 
         var _loginFailure = function () {
+            $log.error('Login failure');
             toastr.error('Something went wrong, please login again.', 'Oops!');
         };
 
-        _init();
-    })
+        console.log($stateParams, socket.connected);
+        if ($stateParams.status === undefined)
+            _init();
+        else {
+            showLoadingBar(70);
+            setTimeout(function() {
+                console.log('reloading');
+                location.href = '/#/access/login';
+            }, 1000);
+        }
 
-    .controller('LoginCtrl', function ($scope, $rootScope, $state, $localStorage) {
-        $rootScope.isLoginPage = true;
-        $rootScope.isMainPage = false;
-        $scope.credential = {};
-        $scope.uiMsg = {};
-        // socket client
-        var socket = io();
+        if (!socket.connected) {
+            location.reload();
+        }
 
         $scope.login = function () {
             socket.emit('user login', $scope.credential);
@@ -220,9 +238,18 @@ var controller = angular.module('xenon.controllers', [])
             if (data.msg === 'success') {
                 $scope.$apply(function () {
                     $rootScope.currentUser = data.user;
-                    $localStorage.currentUser = data.user;
+                    $rootScope.currentUser.easyRtcId = $scope.easyRtcId;
+                    $rootScope.currentUser.isConnected = true;
+
+                    // save to localStorage
+                    $localStorage.currentUser = $rootScope.currentUser;
+
+                    // try to emit to socket server
+                    socket.emit('user logged in rtc', $rootScope.currentUser);
+
+                    $state.go('app.main');
+                    //window.location.href = '/#/app/main';
                 });
-                $state.go('app.main');
             } else {
                 $scope.$apply(function () {
 
@@ -382,29 +409,6 @@ var controller = angular.module('xenon.controllers', [])
         socket.on('sent message', function(data) {
             console.log('received new message from "' + data.sender.username + '" with content "' + data.content + '"');
             $rootScope.addToConversation(data.sender, "message", data.content);
-        });
-
-        // invoked when new user connected and get recent messages successful
-        socket.on('loaded recent messages', function (data) {
-            console.log('loaded recent messages', data);
-            setTimeout(function () {
-
-                $scope.$apply(function () {
-                    $scope.allMessages = data;
-                    angular.forEach(data, function (value) {
-                        $scope.allMessages.push({
-                            text: value.content,
-                            author: value.author,
-                            time: value.createdAt
-                        })
-                    })
-                }, 0);
-            })
-        });
-
-        // invoked when fail to get recent messages
-        socket.on('cannot load recent messages', function (data) {
-
         });
 
         // determine if this is my message

@@ -73,7 +73,10 @@ app.config(function($stateProvider, $urlRouterProvider, $ocLazyLoadProvider, ASS
 			}
 		})
 		.state('access.login', {
-			url: '/login',
+			url: '/login?status',
+			params: {
+				status: null
+			},
 			templateUrl: appHelper.templatePath('login'),
 			controller: 'LoginCtrl',
 			resolve: {
