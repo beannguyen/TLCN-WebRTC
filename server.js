@@ -20,18 +20,19 @@ var webServer = http.createServer(httpApp).listen(9001, function () {
 var socketServer = io.listen(webServer, {"log level":1});
 
 // Start EasyRTC server
-var rtc = easyrtc.listen(httpApp, socketServer,{logLevel:"debug", logDateEnable:true}, function(err, rtc) {
+var rtc = easyrtc.listen(httpApp, socketServer, {logLevel:"debug", logDateEnable:true},
+    function(err, rtc) {
 
-    // After the server has started, we can still change the default room name
-    rtc.setOption("roomDefaultName", "SectorZero");
+        // After the server has started, we can still change the default room name
+        rtc.setOption("roomDefaultName", "SectorZero");
 
-    // Creates a new application called MyApp with a default room named "SectorOne".
-    rtc.createApp(
-        "multipleChanel",
-        {"roomDefaultName":"SectorOne"},
-        myEasyrtcApp
-    );
-});
+        // Creates a new application called MyApp with a default room named "SectorOne".
+        rtc.createApp(
+            "easyrtc.multipleChanel",
+            {"roomDefaultName":"SectorOne"}
+            //myEasyrtcApp
+        );
+    });
 
 // Setting option for specific application
 var myEasyrtcApp = function(err, appObj) {
@@ -127,9 +128,6 @@ socketServer.on('connection', function (socket) {
             if (err) {
                 console.log('Something went wrong!');
             } else if (user) {
-                user.easyRtcId = _user.easyRtcId;
-                user.isConnected = true;
-                user.save();
                 socket.user = user;
                 socket.join(socket.room);
 

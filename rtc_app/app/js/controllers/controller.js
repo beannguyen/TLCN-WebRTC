@@ -155,7 +155,7 @@ var controller = angular.module('xenon.controllers', [])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $rootScope, $state, $stateParams, $localStorage, $location) {
+    .controller('LoginCtrl', function ($scope, $rootScope, $state, $stateParams, $localStorage, $rtcService) {
         $rootScope.isLoginPage = true;
         $rootScope.isMainPage = false;
         $scope.credential = {};
@@ -163,58 +163,13 @@ var controller = angular.module('xenon.controllers', [])
         // socket client
         var socket = io();
 
-        /**
-         * Start init WebRTC
-         */
-
-        var _init = function () {
-
-            $scope.users = [];
-            $scope.easyRtcId = null;
-
-            _setEasyRtcDefaultOptions();
-
-            easyrtc.setPeerListener(_peerListener());
-            easyrtc.setRoomOccupantListener(_roomOccupantListener);
-            easyrtc.connect("multipleChanel", _loginSuccess, _loginFailure);
-        };
-
-        var _setEasyRtcDefaultOptions = function () {
-            easyrtc.enableDebug(true);
-            easyrtc.enableDataChannels(true);
-            easyrtc.enableVideo(false);
-            easyrtc.enableAudio(false);
-            easyrtc.enableVideoReceive(true);
-            easyrtc.enableAudioReceive(true);
-        };
-
-        var _peerListener = function() {
-            console.log('peer listener');
-        };
-
-        var _roomOccupantListener = function (roomName, occupants, isPrimary) {
-
-            // do something to add user to list
-        };
-
-        var _loginSuccess = function (_easyRtcId) {
-
-            $scope.easyRtcId = _easyRtcId;
-        };
-
         // when easyRtcId updated on db, load all user
         socket.on('updated easyRtcId', function (res) {
             console.log(res);
         });
 
-        var _loginFailure = function () {
-            $log.error('Login failure');
-            toastr.error('Something went wrong, please login again.', 'Oops!');
-        };
-
-        console.log($stateParams, socket.connected);
         if ($stateParams.status === undefined)
-            _init();
+            $rtcService.init();
         else {
             showLoadingBar(70);
             setTimeout(function() {
@@ -238,7 +193,6 @@ var controller = angular.module('xenon.controllers', [])
             if (data.msg === 'success') {
                 $scope.$apply(function () {
                     $rootScope.currentUser = data.user;
-                    $rootScope.currentUser.easyRtcId = $scope.easyRtcId;
                     $rootScope.currentUser.isConnected = true;
 
                     // save to localStorage

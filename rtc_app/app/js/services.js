@@ -262,4 +262,58 @@ angular.module('xenon.services', []).
 				}
 			});
 		}
+	}).
+/**
+ *	Init WebRtc connection
+ */
+	factory('$rtcService', function ($log, $rootScope, $localStorage) {
+
+		var socket = io();
+
+		var _init = function () {
+
+			$rootScope.users = [];
+
+			// set default option for student, change this method if user is a teacher
+			_setEasyRtcDefaultOptions();
+
+			easyrtc.setPeerListener(_peerListener());
+			easyrtc.setRoomOccupantListener(_roomOccupantListener);
+			// connect to multipleChanel defined on server.js
+			easyrtc.connect("easyrtc.multipleChanel", function (easyrtcid) {
+
+				$log.debug('rtc login success', easyrtcid);
+				//$rootScope.currentUser.easyRtcId = _easyRtcId;
+
+				// save to localStorage
+				//$localStorage.currentUser = $rootScope.currentUser;
+			}, function () {
+				$log.error('Login failure');
+				toastr.error('Something went wrong, please login again.', 'Oops!');
+			});
+		};
+
+		var _setEasyRtcDefaultOptions = function () {
+			easyrtc.enableDebug(true);
+			easyrtc.enableDataChannels(true);
+			easyrtc.enableVideo(false);
+			easyrtc.enableAudio(false);
+			easyrtc.enableVideoReceive(true);
+			easyrtc.enableAudioReceive(true);
+		};
+
+		var _peerListener = function() {
+			console.log('peer listener');
+		};
+
+		var _roomOccupantListener = function (roomName, occupants, isPrimary) {
+
+			// do something to add user to list
+		};
+
+		return {
+			init: function () {
+				return _init();
+			}
+		}
 	});

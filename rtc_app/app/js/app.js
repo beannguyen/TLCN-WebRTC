@@ -29,6 +29,13 @@ app.run(function()
 	})
 });
 
+/**
+ * detect when user refresh the browser
+ */
+app.run(function () {
+
+});
+
 
 app.config(function($stateProvider, $urlRouterProvider, $ocLazyLoadProvider, ASSETS){
 
@@ -108,12 +115,13 @@ app.run(function ($log, $rootScope, $state, $location, $localStorage) {
 	$rootScope.$on('$stateChangeStart', function (event, toState, toParams) {
 		if (toState.data.requireLogin) {
 
-			if ($rootScope.currentUser == undefined) {
+			if ($localStorage.currentUser == undefined) {
 
 				$location.url('/#/access/login');
 			}
 		} else {
-			if ($rootScope.currentUser != undefined) {
+			if ($localStorage.currentUser != undefined) {
+
 
 				$location.url('/#/app/main');
 			}
